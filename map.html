@@ -33,11 +33,21 @@
             .attr("width", "100%")
             .attr("height", "100%");
 
+        // Create a group to hold the map features
+        const g = svg.append("g");
+
+        // Set up the zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([1, 8])
+            .on("zoom", function(event) {
+                g.attr("transform", event.transform);
+            });
+
         // Load the world map data
         d3.json("./countries-50m.json").then(function(world) {
 
              // Draw the world map
-             svg.append("path")
+             g.append("path")
                 .datum(topojson.feature(world, world.objects.land))
                 .attr("d", path)
                 .attr("fill", "#eee")
@@ -48,7 +58,7 @@
                 console.log("Circuit data loaded:", circuits);
 
                 // Draw the circuit markers and labels
-                svg.selectAll(".circuit-marker")
+                const circuitGroup = g.selectAll(".circuit-group")
                     .data(circuits)
                     .enter()
                     .append("g")
@@ -60,17 +70,20 @@
                         console.log(c);
                         console.log("Circuit clicked:", c);
                         alert("Rank: " + c.rank + "\nName: " + c["circuit name"] + "\nTop Speed: " + c["top speed"] + "\nAverage Speed: " + c["average speed"]);
-                    })
-                    .append("circle")
+                    });
+
+                circuitGroup.append("circle")
                     .attr("class", "circuit-marker")
                     .attr("r", 5);
 
-                svg.selectAll(".circuit-group")
-                    .append("text")
+                circuitGroup.append("text")
                     .attr("class", "circuit-label")
                     .attr("dx", "8px")
                     .attr("dy", "3px")
                     .text(function(d) { return d.rank; });
+
+                // Call the zoom behavior after the circuits have been loaded
+                svg.call(zoom);
             });
         });
     </script>
