@@ -47,24 +47,30 @@
             d3.csv("fastestCircuits.csv").then(function(circuits) {
                 console.log("Circuit data loaded:", circuits);
 
-                // Draw the circuit markers
+                // Draw the circuit markers and labels
                 svg.selectAll(".circuit-marker")
                     .data(circuits)
                     .enter()
-                    .append("circle")
-                    .attr("class", "circuit-marker")
-                    .attr("cx", function(d) { console.log(d); return projection([d.longitude, d.latitude])[0]; })
-                    .attr("cy", function(d) { return projection([d.longitude, d.latitude])[1]; })
-                    .attr("r", 5)
+                    .append("g")
+                    .attr("class", "circuit-group")
+                    .attr("transform", function(d) {
+                        return "translate(" + projection([d.longitude, d.latitude]) + ")";
+                    })
                     .on("click", function(event, c) {
                         console.log(c);
                         console.log("Circuit clicked:", c);
-                        if (c.latitude !== undefined) {
                         alert("Rank: " + c.rank + "\nName: " + c["circuit name"] + "\nTop Speed: " + c["top speed"] + "\nAverage Speed: " + c["average speed"]);
-                        } else {
-                        alert("This circuit does not have a latitude value");
-                        }
-                    });
+                    })
+                    .append("circle")
+                    .attr("class", "circuit-marker")
+                    .attr("r", 5);
+
+                svg.selectAll(".circuit-group")
+                    .append("text")
+                    .attr("class", "circuit-label")
+                    .attr("dx", "8px")
+                    .attr("dy", "3px")
+                    .text(function(d) { return d.rank; });
             });
         });
     </script>
