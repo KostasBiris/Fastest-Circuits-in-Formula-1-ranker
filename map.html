@@ -18,6 +18,12 @@
         .circuit-marker:hover {
             cursor: pointer;
         }
+        .circuit-label {
+            color: #fff;
+            fill: rgb(2, 2, 2);
+            text-shadow: 1px 0 0 white, 0 -1px 0 white, 0 1px 0 white, -1px 0 0 white;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -33,21 +39,19 @@
             .attr("width", "100%")
             .attr("height", "100%");
 
-        // Create a group to hold the map features
+        // Create a group element to hold the map and circuit markers
         const g = svg.append("g");
 
-        // Set up the zoom behavior
+        // Set up zoom behavior
         const zoom = d3.zoom()
             .scaleExtent([1, 8])
-            .on("zoom", function(event) {
-                g.attr("transform", event.transform);
-            });
+            .on("zoom", zoomed);
 
         // Load the world map data
         d3.json("./countries-50m.json").then(function(world) {
 
-             // Draw the world map
-             g.append("path")
+            // Draw the world map
+            g.append("path")
                 .datum(topojson.feature(world, world.objects.land))
                 .attr("d", path)
                 .attr("fill", "#eee")
@@ -58,7 +62,7 @@
                 console.log("Circuit data loaded:", circuits);
 
                 // Draw the circuit markers and labels
-                const circuitGroup = g.selectAll(".circuit-group")
+                const markers = g.selectAll(".circuit-marker")
                     .data(circuits)
                     .enter()
                     .append("g")
@@ -69,23 +73,46 @@
                     .on("click", function(event, c) {
                         console.log(c);
                         console.log("Circuit clicked:", c);
-                        alert("Rank: " + c.rank + "\nName: " + c["circuit name"] + "\nTop Speed: " + c["top speed"] + "\nAverage Speed: " + c["average speed"]);
+                        alert("Rank: " + c.rank + "\nName: " + c["circuit name"] + "\nTop Speed: " + c["top speed"] + " km/h" + "\nAverage Speed: " + c["average speed"] + " km/h");
                     });
 
-                circuitGroup.append("circle")
+                markers.append("circle")
                     .attr("class", "circuit-marker")
                     .attr("r", 5);
 
-                circuitGroup.append("text")
+                markers.append("text")
                     .attr("class", "circuit-label")
-                    .attr("dx", "8px")
-                    .attr("dy", "3px")
-                    .text(function(d) { return d.rank; });
+                    .attr("dx", function(d) { return 4 / projection.scale(); }) // move label 10px to the right of marker
+                    .attr("dy", function(d) { return -10 / projection.scale(); }) // move label 10px above the marker
+                    .attr("font-size", function(d) { return 10 / projection.scale(); })
+                    .attr("text-anchor", "left")
+                    .text(function(d) { return d.rank; })
+                    .attr("transform", function(d) {
+                        const markerSize = 10 / projection.scale();
+                        const labelWidth = this.getBBox().width;
+                        const labelHeight = this.getBBox().height;
+                        const x = markerSize + labelWidth / 2;
+                        const y = -labelHeight / 2;
+                        return "translate(" + x + "," + y + ")";
+                    });
 
-                // Call the zoom behavior after the circuits have been loaded
+                // Call zoom behavior on SVG element
                 svg.call(zoom);
             });
         });
+
+        // Zoom function for circuit markers
+        function zoomed(event) {
+            const { transform } = event;
+            g.attr("transform", transform);
+            g.selectAll(".circuit-marker")
+                .attr("r", function(d) { return 5 / transform.k; }); // set the size of the marker according to its rank
+            g.selectAll(".circuit-label")
+                .attr("dx", function(d) { return 0.3 / transform.k + 6 / (transform.k * d.rank); }) // set the x position of the label
+                .attr("dy", function(d) { return 0.35 / transform.k + 8 / (transform.k * d.rank); }) // set the y position of the label
+                .attr("font-size", function(d) { return 14 / transform.k; }); // set the font size of the label
+        }
+
     </script>
 </body>
 </html>
